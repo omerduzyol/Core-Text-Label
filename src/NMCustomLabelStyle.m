@@ -27,8 +27,8 @@ NSString * const NMCustomLabelStyleBoldKey = @"nm-bold-style";
 
 @implementation NMCustomLabelStyle
 
-@synthesize fontName, fontSize, textColor, image, imageVerticalOffset;
-@synthesize fontRef, colorRef;
+@synthesize fontName, fontSize, textColor, image, imageVerticalOffset, letterSpacing, baselineAdjust;
+@synthesize fontRef, colorRef, letterSpacingRef, baselineAdjustRef;
 
 +(id)styleWithFont:(UIFont *)font color:(UIColor *)color{
 	NMCustomLabelStyle *style = [NMCustomLabelStyle new];
@@ -50,6 +50,7 @@ NSString * const NMCustomLabelStyleBoldKey = @"nm-bold-style";
 -(void)dealloc{
 	[self resetFontRef];
 	[self resetTextColor];
+    [self resetLetterSpacingRef];
 }
 -(void)resetFontRef{
 	if(fontRef){
@@ -62,6 +63,18 @@ NSString * const NMCustomLabelStyleBoldKey = @"nm-bold-style";
 		CFRelease(colorRef);
 		colorRef = nil;
 	}	
+}
+-(void)resetLetterSpacingRef{
+    if (letterSpacingRef) {
+        CFRelease(letterSpacingRef);
+        letterSpacingRef = nil;
+    }
+}
+-(void)resetBaselineAdjustRef{
+    if (baselineAdjustRef) {
+        CFRelease(baselineAdjustRef);
+        baselineAdjustRef = nil;
+    }
 }
 
 -(void)setFontName:(NSString *)_fontName{
@@ -97,6 +110,22 @@ NSString * const NMCustomLabelStyleBoldKey = @"nm-bold-style";
 	}else{
 		return [[UIColor blackColor] CGColor];
 	}
+}
+
+- (CFNumberRef)letterSpacingRef{
+    if (!letterSpacingRef && letterSpacing != 0) {
+        letterSpacingRef = CFNumberCreate(NULL, kCFNumberCGFloatType, &letterSpacing);
+    }
+    
+    return letterSpacingRef;
+}
+
+- (CFNumberRef)baselineAdjustRef{
+    if (!baselineAdjustRef && baselineAdjust != 0) {
+        baselineAdjustRef = CFNumberCreate(NULL, kCFNumberCGFloatType, &baselineAdjust);
+    }
+    
+    return baselineAdjustRef;
 }
 
 

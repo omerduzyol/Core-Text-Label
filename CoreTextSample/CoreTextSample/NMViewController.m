@@ -19,9 +19,23 @@
     [super viewDidLoad];
 
 	NMCustomLabel *label1 = [[NMCustomLabel alloc] initWithFrame:CGRectMake(30, 15, self.view.frame.size.width-60, 200)];
-	label1.text = @"<span class='bold_style'>Your bones don't break, mine do.</span> That's clear. Your cells react to bacteria and viruses differently than mine. <span class='ital_style'>You don't get sick, I do.</span> That's also clear. But for some reason, you and I react the exact same way to water. We swallow it too fast, we choke. We get some in our lungs, we drown. However unreal it may seem, we are connected, you and I. We're on the same curve, just on opposite ends.";
-	[label1 setDefaultStyle:[NMCustomLabelStyle styleWithFont:[UIFont fontWithName:@"HelveticaNeue" size:12] color:[UIColor colorWithRed:153/255.0 green:153/255.0 blue:153/255.0 alpha:1.0]]];
-	[label1 setStyle:[NMCustomLabelStyle styleWithFont:[UIFont fontWithName:@"HelveticaNeue-Bold" size:13] color:[UIColor colorWithRed:53/255.0 green:53/255.0 blue:53/255.0 alpha:1.0]] forKey:@"bold_style"];
+	label1.text = @"<span class='bold_style1'>Your bones don't break, mine do.</span> That's cl<span class='superscript'>ear</span>. Your cells react to bacteria and viruses differently than mine. <span class='ital_style'>You don't get sick, I do.</span> That's also clear. But for some reason, you and I react the exact same way to water. We swallow it too fast, we choke. We get some in our lungs, we drown. However unreal it may seem, we are connected, you and I. We're on the same curve, just on opposite ends.";
+    
+    NMCustomLabelStyle *defaultStyle = [NMCustomLabelStyle styleWithFont:[UIFont fontWithName:@"HelveticaNeue" size:12] color:[UIColor colorWithRed:153/255.0 green:153/255.0 blue:153/255.0 alpha:1.0]];
+    
+    //defaultStyle.letterSpacing = 5;
+    
+	[label1 setDefaultStyle:defaultStyle];
+    
+    NMCustomLabelStyle *boldStyle = [NMCustomLabelStyle styleWithFont:[UIFont fontWithName:@"HelveticaNeue-Bold" size:13] color:[UIColor colorWithRed:53/255.0 green:53/255.0 blue:53/255.0 alpha:1.0]];
+    
+    boldStyle.letterSpacing = 4;
+    [label1 setStyle:boldStyle forKey:@"bold_style1"];
+    
+    NMCustomLabelStyle *superStyle = [NMCustomLabelStyle styleWithFont:[UIFont fontWithName:@"HelveticaNeue" size:10] color:[UIColor colorWithRed:153/255.0 green:153/255.0 blue:153/255.0 alpha:1.0]];
+    superStyle.baselineAdjust = 6;
+    [label1 setStyle:superStyle forKey:@"superscript"];
+	
 	[label1 setStyle:[NMCustomLabelStyle styleWithFont:[UIFont fontWithName:@"HelveticaNeue-LightItalic" size:12] color:[UIColor colorWithRed:153/255.0 green:153/255.0 blue:153/255.0 alpha:1.0]] forKey:@"ital_style"];
 	label1.kern = -0.5;
 	label1.lineHeight = 12;

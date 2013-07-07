@@ -33,9 +33,13 @@ extern NSString * const NMCustomLabelStyleBoldKey;
 @property (nonatomic, strong) UIColor *textColor;
 @property (nonatomic, strong) UIImage *image;
 @property (nonatomic) CGFloat imageVerticalOffset;
+@property (nonatomic) CGFloat letterSpacing;
+@property (nonatomic) CGFloat baselineAdjust;
 
 @property (nonatomic, readonly) CTFontRef fontRef;
 @property (nonatomic, readonly) CGColorRef colorRef;
+@property (nonatomic, readonly) CFNumberRef letterSpacingRef;
+@property (nonatomic, readonly) CFNumberRef baselineAdjustRef;
 
 +(id)styleWithFont:(UIFont *)font color:(UIColor *)color;
 +(id)styleWithImage:(UIImage *)image verticalOffset:(CGFloat)verticalOffset;

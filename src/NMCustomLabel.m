@@ -24,6 +24,7 @@
 static NSString *kNMImageInfoAttributeName = @"kNMImageInfoAttributeName";
 static NSString *kNMImageAttributeName = @"kNMImageAttributeName";
 static NSString *kNMImageVerticalOffsetAttributeName = @"kNMImageVerticalOffsetAttributeName";
+static NSString *kNMBaselineAdjustAttributeName = @"kNMBaselineAdjustAttributeName";
 
 static NSRegularExpression *usernameRegEx;
 static NSRegularExpression *usernameEndRegEx;
@@ -283,6 +284,17 @@ static NSCharacterSet *alphaNumericCharacterSet;
 	//set default font
 	CFAttributedStringSetAttribute(attrString, CFRangeMake(0, CFAttributedStringGetLength(attrString)), kCTFontAttributeName, defaultStyle.fontRef);
 	
+    if (defaultStyle.letterSpacing != 0) {
+        {
+        CGFloat floatNum = defaultStyle.letterSpacing;
+        CFNumberRef num = CFNumberCreate(NULL, kCFNumberFloatType, &floatNum);
+        
+        CFAttributedStringSetAttribute(attrString, CFRangeMake(0, CFAttributedStringGetLength(attrString)), kCTKernAttributeName, num);
+        
+        CFRelease(num);
+        }
+    }
+    
 	__block int locOfTag = -1;
 	__block int totalTagLength = 0;
 //	static int eachTagLength = 7;
@@ -314,6 +326,12 @@ static NSCharacterSet *alphaNumericCharacterSet;
 		}
 	}];
  */
+    
+    if (kern != 0) {
+        CFNumberRef kernValue = (__bridge  CFNumberRef) [NSNumber numberWithFloat:kern];
+        CFAttributedStringSetAttribute(attrString, CFRangeMake(0, CFAttributedStringGetLength(attrString)), kCTKernAttributeName, kernValue);
+    }
+    
 	[spanTagRegEx enumerateMatchesInString:self.text options:0 range:NSMakeRange(0, [self.text length]) usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop){
 		int thisTagLength = 14;
 	
@@ -321,6 +339,9 @@ static NSCharacterSet *alphaNumericCharacterSet;
 		CGColorRef color=nil;
 		UIImage *image=nil;
 		CGFloat imageVerticalOffset=0;
+        CFNumberRef letterSpacing = nil;
+        CFNumberRef baselineAdjust = nil;
+        
 		if(match.numberOfRanges > 1){
 			NSRange tagTypeRange = [match rangeAtIndex:1];
 			thisTagLength += tagTypeRange.length;
@@ -336,6 +357,8 @@ static NSCharacterSet *alphaNumericCharacterSet;
 					color = style.colorRef;
 					image = style.image;
 					imageVerticalOffset = style.imageVerticalOffset;
+                    letterSpacing = style.letterSpacingRef;
+                    baselineAdjust = style.baselineAdjustRef;
 				}
 			}
 		}
@@ -353,8 +376,22 @@ static NSCharacterSet *alphaNumericCharacterSet;
 		if(image){
 			NSDictionary *imageAttr = [NSDictionary dictionaryWithObjectsAndKeys:image, kNMImageAttributeName, [NSNumber numberWithFloat:imageVerticalOffset], kNMImageVerticalOffsetAttributeName, nil];
 			NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:imageAttr, kNMImageInfoAttributeName, nil];
-			CFAttributedStringSetAttributes(attrString, CFRangeMake(markupRange.location, markupRange.length), (__bridge CFDictionaryRef)attributes, NO);			
+			CFAttributedStringSetAttributes(attrString, CFRangeMake(markupRange.location, markupRange.length), (__bridge CFDictionaryRef)attributes, NO);
 		}
+        
+        if (letterSpacing) {
+            NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:(__bridge id)letterSpacing, kCTKernAttributeName, nil];
+			CFAttributedStringSetAttributes(attrString, CFRangeMake(markupRange.location, markupRange.length), (__bridge CFDictionaryRef)attributes, NO);
+            /*
+            CFNumberRef charsVertAdj = (__bridge CFNumberRef)[NSNumber numberWithFloat:1];
+            CFAttributedStringSetAttribute(attrString, CFRangeMake(markupRange.location, 2), kCTSuperscriptAttributeName, charsVertAdj);
+            */
+        }
+        
+        if (baselineAdjust) {
+            CFAttributedStringSetAttribute(attrString, CFRangeMake(markupRange.location, markupRange.length), (__bridge CFStringRef)kNMBaselineAdjustAttributeName, baselineAdjust);
+             
+        }
 
 	}];
 
@@ -449,9 +486,9 @@ static NSCharacterSet *alphaNumericCharacterSet;
 	CTParagraphStyleRef paragraphStyle = CTParagraphStyleCreate(_settings, sizeof(_settings) / sizeof(_settings[0]));
 	CFAttributedStringSetAttribute(attrString, CFRangeMake(0, CFAttributedStringGetLength(attrString)), kCTParagraphStyleAttributeName, paragraphStyle);
 	
-	CFNumberRef kernValue = (__bridge  CFNumberRef) [NSNumber numberWithFloat:kern];
-	CFAttributedStringSetAttribute(attrString, CFRangeMake(0, CFAttributedStringGetLength(attrString)), kCTKernAttributeName, kernValue);
-	
+    
+    
+    
 	if(framesetter){
 		CFRelease(framesetter);
 	}
@@ -560,12 +597,30 @@ static NSCharacterSet *alphaNumericCharacterSet;
 		CFRange range = CFRangeMake(0, count);
 		CTFrameGetLineOrigins(ctFrame, range, origins); 
 		// note that we only enumerate to count-1 in here-- we draw the last line separately 
-		for (CFIndex i = 0; i < count-1; i++) 
-		{ 
-			// draw each line in the correct position as-is 
-			CGContextSetTextPosition(context, origins[i].x, origins[i].y); 
-			CTLineRef line = (CTLineRef)CFArrayGetValueAtIndex(lines, i); 
-			CTLineDraw(line, context); 
+		for (CFIndex i = 0; i < count-1; i++)
+		{
+            // draw each line in the correct position as-is 
+            CTLineRef line = (CTLineRef)CFArrayGetValueAtIndex(lines, i);
+            NSArray *glyphRuns = (NSArray *)CTLineGetGlyphRuns((CTLineRef)line);
+            
+            // loop glyphs on each line
+            for (id run in glyphRuns) {
+                CFRange range = CTRunGetStringRange((CTRunRef)run);
+                
+                // check baseline attribute is defined
+                CFNumberRef baselineValue = CFAttributedStringGetAttribute(attrString, range.location, (__bridge CFStringRef)kNMBaselineAdjustAttributeName, nil);
+                
+                if (baselineValue) {
+                    CGFloat baselineAdjust =  [((__bridge NSNumber *)baselineValue) floatValue];
+                    // adjust the baseline
+                    CGContextSetTextPosition(context, origins[i].x, origins[i].y + baselineAdjust);
+                } else {
+                    CGContextSetTextPosition(context, origins[i].x, origins[i].y);
+                }
+                
+                // run current glyph on context
+                CTRunDraw((CTRunRef)run, context, CFRangeMake(0, 0));
+            }
 		} 
 		
 		// truncate the last line before drawing it 
